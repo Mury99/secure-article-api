@@ -35,12 +35,12 @@ class ArticleVoterTest extends TestCase
     }
 
     #[DataProvider('provideScenarios')]
-    public function testVote(string $grantedRole, string $attribute, bool $isAuthor, bool $expected): void
+    public function testVote(UserRole $grantedRole, string $attribute, bool $isAuthor, bool $expected): void
     {
         $this->security->expects($this->atMost(2))
             ->method('isGranted')
             ->willReturnCallback(
-                fn (string $role) => $role === $grantedRole
+                fn (string $role) => $role === $grantedRole->toSecurityRole()
             );
 
         $article = in_array($attribute, [ArticleVoter::EDIT, ArticleVoter::DELETE], true)
@@ -52,41 +52,47 @@ class ArticleVoterTest extends TestCase
         $this->assertSame(
             $expected,
             $result > 0,
-            sprintf('Expected %s to be %s for role %s (author: %s)', $attribute, $expected ? 'GRANTED' : 'DENIED', $grantedRole, $isAuthor ? 'yes' : 'no')
+            sprintf(
+                'Expected %s to be %s for role %s (author: %s)',
+                $attribute,
+                $expected ? 'GRANTED' : 'DENIED',
+                $grantedRole->toSecurityRole(),
+                $isAuthor ? 'yes' : 'no'
+            )
         );
     }
 
     /**
-     * @return iterable<array{string, string, bool, bool}>
+     * @return iterable<array{UserRole, string, bool, bool}>
      */
     public static function provideScenarios(): iterable
     {
         return [
             // Admin
-            [UserRole::ADMIN->toSecurityRole(), ArticleVoter::VIEW, false, true],
-            [UserRole::ADMIN->toSecurityRole(), ArticleVoter::CREATE, false, true],
-            [UserRole::ADMIN->toSecurityRole(), ArticleVoter::EDIT, false, true],
-            [UserRole::ADMIN->toSecurityRole(), ArticleVoter::DELETE, false, true],
+            [UserRole::ADMIN, ArticleVoter::VIEW, false, true],
+            [UserRole::ADMIN, ArticleVoter::CREATE, false, true],
+            [UserRole::ADMIN, ArticleVoter::EDIT, false, true],
+            [UserRole::ADMIN, ArticleVoter::DELETE, false, true],
 
             // Author
-            [UserRole::AUTHOR->toSecurityRole(), ArticleVoter::VIEW, false, true],
-            [UserRole::AUTHOR->toSecurityRole(), ArticleVoter::CREATE, false, true],
-            [UserRole::AUTHOR->toSecurityRole(), ArticleVoter::EDIT, true, true],
-            [UserRole::AUTHOR->toSecurityRole(), ArticleVoter::EDIT, false, false],
-            [UserRole::AUTHOR->toSecurityRole(), ArticleVoter::DELETE, true, true],
-            [UserRole::AUTHOR->toSecurityRole(), ArticleVoter::DELETE, false, false],
+            [UserRole::AUTHOR, ArticleVoter::VIEW, false, true],
+            [UserRole::AUTHOR, ArticleVoter::CREATE, false, true],
+            [UserRole::AUTHOR, ArticleVoter::EDIT, true, true],
+            [UserRole::AUTHOR, ArticleVoter::EDIT, false, false],
+            [UserRole::AUTHOR, ArticleVoter::DELETE, true, true],
+            [UserRole::AUTHOR, ArticleVoter::DELETE, false, false],
 
             // Reader
-            [UserRole::READER->toSecurityRole(), ArticleVoter::VIEW, false, true],
-            [UserRole::READER->toSecurityRole(), ArticleVoter::CREATE, false, false],
+            [UserRole::READER, ArticleVoter::VIEW, false, true],
+            [UserRole::READER, ArticleVoter::CREATE, false, false],
 
             // Default role
-            [UserRole::USER->toSecurityRole(), ArticleVoter::VIEW, false, true],
-            [UserRole::USER->toSecurityRole(), ArticleVoter::CREATE, false, false],
-            [UserRole::USER->toSecurityRole(), ArticleVoter::EDIT, true, true],
-            [UserRole::USER->toSecurityRole(), ArticleVoter::EDIT, false, false],
-            [UserRole::USER->toSecurityRole(), ArticleVoter::DELETE, true, true],
-            [UserRole::USER->toSecurityRole(), ArticleVoter::DELETE, false, false],
+            [UserRole::USER, ArticleVoter::VIEW, false, true],
+            [UserRole::USER, ArticleVoter::CREATE, false, false],
+            [UserRole::USER, ArticleVoter::EDIT, true, true],
+            [UserRole::USER, ArticleVoter::EDIT, false, false],
+            [UserRole::USER, ArticleVoter::DELETE, true, true],
+            [UserRole::USER, ArticleVoter::DELETE, false, false],
         ];
     }
 
