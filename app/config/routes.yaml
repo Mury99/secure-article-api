@@ -1,0 +1,8 @@
+controllers:
+    resource:
+        path: ../src/Infrastructure/Symfony/Controller
+        namespace: App\Infrastructure\Symfony\Controller
+    type: attribute
+
+auth_login_check:
+    path: /auth/login_check
