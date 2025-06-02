@@ -9,8 +9,9 @@ use Symfony\Component\Validator\Constraints as Assert;
 class ArticleUpdateDto
 {
     #[Assert\NotBlank]
-    public ?string $title = null;
+    #[Assert\Length(max: 255)]
+    public string $title;
 
     #[Assert\NotBlank]
-    public ?string $content = null;
+    public string $content;
 }

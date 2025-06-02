@@ -14,9 +14,11 @@ class UserUpdateDto
      */
     #[Assert\NotBlank]
     #[Assert\Email]
+    #[Assert\Length(max: 100)]
     public string $email;
 
     #[Assert\NotBlank]
+    #[Assert\Length(max: 100)]
     public string $name;
 
     /**

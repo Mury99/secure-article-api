@@ -105,8 +105,8 @@ class ArticleController extends AbstractController
 
         $command = new ArticleUpdateCommand(
             $id,
-            (string)$dto->title,
-            (string)$dto->content,
+            $dto->title,
+            $dto->content,
         );
         $updatedArticle = $this->handle($command);
 

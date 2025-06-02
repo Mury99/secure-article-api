@@ -14,12 +14,14 @@ class UserCreateDto
      */
     #[Assert\NotBlank]
     #[Assert\Email]
+    #[Assert\Length(max: 100)]
     public string $username;
 
     #[Assert\NotBlank]
     public string $password;
 
     #[Assert\NotBlank]
+    #[Assert\Length(max: 100)]
     public string $name;
 
     /**
