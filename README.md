@@ -13,6 +13,10 @@ bin/console lexik:jwt:generate-keypair \
 ```
 
 ```
+make test
+```
+
+```
 curl --location 'https://localhost/auth/login_check' \
 --header 'Content-Type: application/json' \
 --data-raw '{

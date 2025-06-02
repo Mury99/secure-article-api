@@ -21,7 +21,6 @@ final readonly class ArticleByIdHandler
     public function __invoke(ArticleByIdQuery $query): Article
     {
         $article = $this->articleRepository->findById($query->id);
-
         if (!$article) {
             throw new NotFoundHttpException('Article not found');
         }
