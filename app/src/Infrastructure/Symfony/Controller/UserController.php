@@ -78,18 +78,18 @@ class UserController extends AbstractController
 
         try {
             $updatedUser = $this->handle($command);
+
+            return $this->json($updatedUser);
         } catch (HandlerFailedException $e) {
             $previous = $e->getPrevious();
             if ($previous instanceof EmailAlreadyTakenException) {
                 return $this->json([
                     'message' => $previous->getMessage(),
-                ], Response::HTTP_NOT_FOUND);
+                ], Response::HTTP_CONFLICT);
             }
 
             throw $e;
         }
-
-        return $this->json($updatedUser);
     }
 
     #[Route('/{id}', name: 'delete', requirements: [
@@ -99,6 +99,8 @@ class UserController extends AbstractController
     {
         try {
             $this->handle(new UserDeleteCommand($id));
+
+            return $this->json(null, Response::HTTP_NO_CONTENT);
         } catch (HandlerFailedException $e) {
             $previous = $e->getPrevious();
             if ($previous instanceof UserNotFoundException) {
@@ -109,7 +111,5 @@ class UserController extends AbstractController
 
             throw $e;
         }
-
-        return $this->json(null, Response::HTTP_NO_CONTENT);
     }
 }

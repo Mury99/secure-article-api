@@ -8,6 +8,7 @@ use App\Application\Article\Command\ArticleCreateCommand;
 use App\Application\Article\Command\ArticleDeleteCommand;
 use App\Application\Article\Command\ArticleUpdateCommand;
 use App\Application\Article\Dto\ArticleCreateDto;
+use App\Application\Article\Dto\ArticleDto;
 use App\Application\Article\Dto\ArticleUpdateDto;
 use App\Application\Article\Query\ArticleByIdQuery;
 use App\Application\Article\Query\ArticleListQuery;
@@ -21,6 +22,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Messenger\Exception\HandlerFailedException;
 use Symfony\Component\Messenger\HandleTrait;
 use Symfony\Component\Messenger\MessageBusInterface;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Requirement\Requirement;
 
@@ -38,6 +40,8 @@ class ArticleController extends AbstractController
     #[Route('', name: 'list', methods: [Request::METHOD_GET])]
     public function list(): JsonResponse
     {
+        $this->denyAccessUnlessGranted(ArticleVoter::VIEW, null);
+
         $articles = $this->handle(new ArticleListQuery());
 
         return $this->json($articles);
@@ -57,17 +61,24 @@ class ArticleController extends AbstractController
     #[Route('/{id}', name: 'detail', requirements: [
         'id' => Requirement::UUID_V7,
     ], methods: [Request::METHOD_GET])]
-    public function show(string $id): JsonResponse
+    public function show(string $id, ObjectMapperInterface $objectMapper): JsonResponse
     {
-        $article = $this->handle(new ArticleByIdQuery($id));
+        $this->denyAccessUnlessGranted(ArticleVoter::VIEW, null);
 
-        if (!$article) {
-            return $this->json([
-                'error' => 'Article not found',
-            ], Response::HTTP_NOT_FOUND);
+        try {
+            $article = $this->handle(new ArticleByIdQuery($id));
+
+            return $this->json($objectMapper->map($article, ArticleDto::class));
+        } catch (HandlerFailedException $e) {
+            $previous = $e->getPrevious();
+            if ($previous instanceof NotFoundHttpException) {
+                return $this->json([
+                    'message' => $previous->getMessage(),
+                ], Response::HTTP_NOT_FOUND);
+            }
+
+            throw $e;
         }
-
-        return $this->json($article);
     }
 
     #[Route('/{id}', name: 'update', requirements: [
@@ -77,7 +88,18 @@ class ArticleController extends AbstractController
         string $id,
         #[MapRequestPayload] ArticleUpdateDto $dto,
     ): JsonResponse {
-        $article = $this->handle(new ArticleByIdQuery($id));
+        try {
+            $article = $this->handle(new ArticleByIdQuery($id));
+        } catch (HandlerFailedException $e) {
+            $previous = $e->getPrevious();
+            if ($previous instanceof NotFoundHttpException) {
+                return $this->json([
+                    'message' => $previous->getMessage(),
+                ], Response::HTTP_NOT_FOUND);
+            }
+
+            throw $e;
+        }
 
         $this->denyAccessUnlessGranted(ArticleVoter::EDIT, $article);
 
@@ -102,8 +124,8 @@ class ArticleController extends AbstractController
             $previous = $e->getPrevious();
             if ($previous instanceof NotFoundHttpException) {
                 return $this->json([
-                    'message' => 'User already exists',
-                ], Response::HTTP_CONFLICT);
+                    'message' => $previous->getMessage(),
+                ], Response::HTTP_NOT_FOUND);
             }
 
             throw $e;

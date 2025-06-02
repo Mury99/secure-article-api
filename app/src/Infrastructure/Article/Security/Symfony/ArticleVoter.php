@@ -46,7 +46,7 @@ class ArticleVoter extends Voter
         }
 
         return match ($attribute) {
-            self::VIEW => true,
+            self::VIEW => $this->security->isGranted(UserRole::READER->toSecurityRole()),
             self::CREATE => $this->security->isGranted(UserRole::AUTHOR->toSecurityRole()),
             self::EDIT, self::DELETE => $this->canEditOrDelete($subject, $user),
             default => false,

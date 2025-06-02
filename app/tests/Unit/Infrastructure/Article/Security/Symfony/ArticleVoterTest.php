@@ -14,24 +14,30 @@ use PHPUnit\Framework\TestCase;
 use Ramsey\Uuid\Uuid;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
+use Symfony\Component\Security\Core\Role\RoleHierarchy;
 
 class ArticleVoterTest extends TestCase
 {
-    private MockObject $security;
+    private MockObject&Security $security;
     private TokenInterface&MockObject $token;
     private User&MockObject $user;
+    private RoleHierarchy $roleHierarchy;
 
     private ArticleVoter $voter;
 
     protected function setUp(): void
     {
+        $this->roleHierarchy = new RoleHierarchy([
+            'ROLE_ADMIN' => ['ROLE_AUTHOR', 'ROLE_READER'],
+            'ROLE_AUTHOR' => ['ROLE_READER'],
+        ]);
+
         $this->security = $this->createMock(Security::class);
         $this->token = $this->createMock(TokenInterface::class);
-
-        $this->voter = new ArticleVoter($this->security);
-
         $this->user = $this->createMock(User::class);
         $this->token->method('getUser')->willReturn($this->user);
+
+        $this->voter = new ArticleVoter($this->security);
     }
 
     #[DataProvider('provideScenarios')]
@@ -40,7 +46,7 @@ class ArticleVoterTest extends TestCase
         $this->security->expects($this->atMost(2))
             ->method('isGranted')
             ->willReturnCallback(
-                fn (string $role) => $role === $grantedRole->toSecurityRole()
+                fn (string $role) => $this->isRoleGranted($role, $grantedRole)
             );
 
         $article = in_array($attribute, [ArticleVoter::EDIT, ArticleVoter::DELETE], true)
@@ -87,13 +93,18 @@ class ArticleVoterTest extends TestCase
             [UserRole::READER, ArticleVoter::CREATE, false, false],
 
             // Default role
-            [UserRole::USER, ArticleVoter::VIEW, false, true],
+            [UserRole::USER, ArticleVoter::VIEW, false, false],
             [UserRole::USER, ArticleVoter::CREATE, false, false],
-            [UserRole::USER, ArticleVoter::EDIT, true, true],
             [UserRole::USER, ArticleVoter::EDIT, false, false],
-            [UserRole::USER, ArticleVoter::DELETE, true, true],
             [UserRole::USER, ArticleVoter::DELETE, false, false],
         ];
+    }
+
+    private function isRoleGranted(string $roleToCheck, UserRole $grantedRole): bool
+    {
+        $reachableRoles = $this->roleHierarchy->getReachableRoleNames([$grantedRole->toSecurityRole()]);
+
+        return in_array($roleToCheck, $reachableRoles, true);
     }
 
     private function createArticleWithAuthor(bool $isAuthor): Article
