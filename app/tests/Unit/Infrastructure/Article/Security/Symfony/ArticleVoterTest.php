@@ -91,6 +91,8 @@ class ArticleVoterTest extends TestCase
             // Reader
             [UserRole::READER, ArticleVoter::VIEW, false, true],
             [UserRole::READER, ArticleVoter::CREATE, false, false],
+            [UserRole::READER, ArticleVoter::EDIT, false, false],
+            [UserRole::READER, ArticleVoter::DELETE, false, false],
 
             // Default role
             [UserRole::USER, ArticleVoter::VIEW, false, false],
