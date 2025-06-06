@@ -8,7 +8,3 @@ parameters:
         - tests
     parallel:
         maximumNumberOfProcesses: 4
-#    reportUnmatchedIgnoredErrors: false
-#    ignoreErrors:
-#        - '$messageBus is never read, only written' # not straight forward, perhaps it is not counting with trait logic with readonly
-#        - '#Property .*?\\$messageBus is never read, only written#'
